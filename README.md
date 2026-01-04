@@ -1,49 +1,50 @@
 # Petstore API Test Automation Framework
 
-A modern, enterprise-grade API test automation framework built with **Playwright**, **TypeScript**, and **Allure reporting**. This framework provides comprehensive API testing for the Petstore API with support for smoke and regression test suites.
+A modern, BDD-focused API test automation framework built with **Playwright**, **Cucumber**, **TypeScript**, and **Allure reporting**. This framework provides comprehensive API testing for the Petstore API using Gherkin feature files with support for smoke and regression test suites.
 
 ## 🏗️ Project Structure
 
 ```
 petstore-playwright/
 ├── src/
-│   ├── api/
-│   │   ├── clients/           # API client classes
-│   │   │   ├── PetClient.ts
-│   │   │   ├── StoreClient.ts
-│   │   │   └── UserClient.ts
-│   │   ├── models/            # TypeScript interfaces/types
-│   │   │   ├── Pet.ts
-│   │   │   ├── Order.ts
-│   │   │   ├── User.ts
-│   │   │   ├── Category.ts
-│   │   │   └── Tag.ts
-│   │   └── config/
-│   │       └── ApiConfig.ts   # API configuration
-│   ├── tests/                 # Test specifications
-│   │   ├── pet.spec.ts
-│   │   ├── store.spec.ts
-│   │   └── user.spec.ts
-│   ├── fixtures/
-│   │   └── test-context.ts    # Playwright fixtures
-│   └── utils/
-│       └── helpers.ts         # Helper functions
-├── playwright.config.ts       # Playwright configuration
-├── package.json              # Dependencies & scripts
-├── tsconfig.json             # TypeScript configuration
+│   ├── features/              # Gherkin feature files
+│   │   ├── Pet.feature
+│   │   ├── User.feature
+│   │   └── Store.feature
+│   ├── step-definitions/      # Step definition implementations
+│   │   ├── pet.steps.ts
+│   │   ├── user.steps.ts
+│   │   └── store.steps.ts
+│   ├── services/              # API service classes
+│   │   ├── petService.ts
+│   │   ├── userService.ts
+│   │   └── storeService.ts
+│   ├── models/                # TypeScript interfaces/types
+│   │   ├── Pet.ts
+│   │   ├── Order.ts
+│   │   ├── User.ts
+│   │   ├── Category.ts
+│   │   └── Tag.ts
+│   ├── support/               # Cucumber support files
+│   │   ├── world.ts           # Custom World class
+│   │   └── hooks.ts           # Before/After hooks
+│   └── config/
+│       └── config.ts          # API configuration
+├── cucumber.js                # Cucumber configuration
+├── package.json               # Dependencies & scripts
+├── tsconfig.json              # TypeScript configuration
 ├── .gitignore
-├── .env.example
 └── README.md
 ```
 
 ## 🚀 Key Features
 
+- ✅ **Cucumber BDD** - Write tests in Gherkin syntax for better readability
 - ✅ **Playwright + TypeScript** - Modern, type-safe API testing
 - ✅ **Allure Reporting** - Rich test reports with request/response attachments
-- ✅ **Modular Architecture** - Clean separation of concerns with clients and models
-- ✅ **Test Fixtures** - Reusable Playwright fixtures for API clients
+- ✅ **Modular Architecture** - Clean separation of concerns with services and models
+- ✅ **Custom World Context** - Share data between steps using Cucumber World
 - ✅ **Tag-based Execution** - Run tests by tags (@smoke, @regression, @pet, @user, @store)
-- ✅ **Parallel Execution** - Fast test execution with configurable workers
 - ✅ **CI/CD Ready** - Easy integration with GitHub Actions and other CI systems
 - ✅ **Comprehensive Coverage** - All CRUD operations for Pet, Store, and User APIs
 
@@ -65,15 +66,10 @@ cd petstore-playwright
 npm install
 ```
 
-### 3. Install Playwright browsers (optional for API-only tests)
+### 3. Verify installation
 ```bash
-npx playwright install
-```
-
-### 4. Configure environment (optional)
-```bash
-cp .env.example .env
-# Edit .env with your settings if needed
+# Check Cucumber version
+npx cucumber-js --version
 ```
 
 ## 🧪 Running Tests
@@ -104,31 +100,32 @@ npm run test:smoke
 npm run test:regression
 ```
 
-### Run with UI (headed mode)
+### Run specific feature file
 ```bash
-npm run test:headed
+npx cucumber-js src/features/Pet.feature
 ```
 
-### Debug tests
+### Run with specific tags combination
 ```bash
-npm run test:debug
+# Run pet smoke tests
+npx cucumber-js --tags '@pet and @smoke'
+
+# Run all except smoke tests
+npx cucumber-js --tags 'not @smoke'
 ```
 
 ## 📊 Test Reporting
 
 ### Generate and view Allure reports
 
-#### Option 1: Generate and open static report
+After running tests, Allure results are automatically generated in the `allure-results` directory.
+
+#### Generate and open report
 ```bash
-# Generate report
+# Generate report from results
 npm run allure:generate
 
-# Open report in browser
-npm run allure:open
-```
-
-#### Option 2: Serve report with live reload
-```bash
+# Serve report with live server
 npm run allure:serve
 ```
 
@@ -138,6 +135,7 @@ Allure reports include:
 - ✅ Full request/response details for each API call
 - ✅ Execution timeline and history trends
 - ✅ Categorized failures for easy debugging
+- ✅ Tag-based filtering and grouping
 
 ## 📝 Test Scenarios
 
@@ -164,7 +162,7 @@ Allure reports include:
 
 ## 🏷️ Tagging Strategy
 
-Tests use Playwright's grep functionality for tag-based execution:
+Tests use Cucumber's tag system for flexible test execution:
 
 - `@smoke` - Critical path tests (run on every commit)
 - `@regression` - Full regression suite (run before releases)
@@ -175,32 +173,47 @@ Tests use Playwright's grep functionality for tag-based execution:
 - `@read` - Read/Get operations
 - `@update` - Update operations
 - `@delete` - Delete operations
+- `@epic:PetStore_API` - Epic level tag
+- `@feature:Pet_Management` - Feature level tags
+
+Tags can be combined using logical operators:
+```bash
+# Run smoke tests for pet API only
+npx cucumber-js --tags '@smoke and @pet'
+
+# Run all regression tests except user tests
+npx cucumber-js --tags '@regression and not @user'
+
+# Run create or delete operations
+npx cucumber-js --tags '@create or @delete'
+```
 
 ## ⚙️ Configuration
 
-### Environment Variables (.env)
-```bash
-# API Configuration
-API_BASE_URL=https://petstore.swagger.io/v2
-API_TIMEOUT=30000
-
-# Test Configuration
-TEST_TIMEOUT=60000
-RETRY_COUNT=1
-WORKERS=4
-
-# Allure Configuration
-ALLURE_RESULTS_DIR=./allure-results
-ALLURE_REPORT_DIR=./allure-report
+### Cucumber Configuration (cucumber.js)
+```javascript
+module.exports = {
+  default: {
+    require: ['src/**/*.ts'],
+    requireModule: ['ts-node/register'],
+    format: [
+      'progress',
+      'json:reports/cucumber-report.json',
+      'html:reports/cucumber-report.html',
+      'allure-cucumberjs/reporter'
+    ],
+    formatOptions: {
+      resultsDir: 'allure-results'
+    }
+  }
+};
 ```
 
-### Playwright Configuration (playwright.config.ts)
+### API Configuration (src/config/config.ts)
 Key settings:
 - Base URL: `https://petstore.swagger.io/v2`
-- Timeout: 60 seconds per test
-- Retries: 1 (configurable)
-- Workers: 4 (parallel execution)
-- Reporters: HTML, Allure
+- Timeout: 30 seconds per request
+- Endpoints: Pre-configured API endpoints for Pet, Store, and User operations
 
 ## 🔄 CI/CD Integration
 
@@ -253,31 +266,57 @@ jobs:
           path: allure-report
 ```
 
-## 🏗️ API Architecture
+## 🏗️ BDD Architecture
 
-### API Clients
-Each API domain has a dedicated client class:
+### Gherkin Feature Files
+Feature files define test scenarios in human-readable Gherkin syntax:
+- **Pet.feature** - Pet management scenarios (create, read, update, delete, search)
+- **User.feature** - User management scenarios (create, read, update, delete, login, logout)
+- **Store.feature** - Store operations scenarios (place order, get order, delete order, inventory)
 
-**PetClient** - Manages pet-related operations
+### Step Definitions
+Step definitions connect Gherkin steps to TypeScript code:
+- **pet.steps.ts** - Implements Given/When/Then steps for Pet scenarios
+- **user.steps.ts** - Implements Given/When/Then steps for User scenarios
+- **store.steps.ts** - Implements Given/When/Then steps for Store scenarios
+
+### Services Layer
+Service classes handle API communication using Playwright's request API:
+
+**PetService** - Manages pet-related operations
 - `createPet(pet: Pet)`
 - `updatePet(pet: Pet)`
 - `getPetById(petId: number)`
 - `getPetsByStatus(status: string)`
 - `deletePet(petId: number)`
 
-**StoreClient** - Manages store/order operations
+**StoreService** - Manages store/order operations
 - `getInventory()`
 - `placeOrder(order: Order)`
 - `getOrderById(orderId: number)`
 - `deleteOrder(orderId: number)`
 
-**UserClient** - Manages user operations
+**UserService** - Manages user operations
 - `createUser(user: User)`
 - `getUserByUsername(username: string)`
 - `updateUser(username: string, user: User)`
 - `deleteUser(username: string)`
 - `loginUser(username: string, password: string)`
 - `logoutUser()`
+
+### Custom World
+The CustomWorld class maintains context between steps:
+- Service instances (PetService, UserService, StoreService)
+- API response and response body
+- Context data (petId, orderId, username)
+- Current entities (currentPet, currentUser, currentOrder)
+
+### Hooks
+Cucumber hooks provide setup and teardown functionality:
+- **Before**: Initialize services before each scenario
+- **After**: Cleanup services and attach response data to reports
+- **BeforeAll**: Log test execution start
+- **AfterAll**: Log test execution completion
 
 ### Type Safety
 All API models are strongly typed with TypeScript interfaces:
@@ -289,33 +328,46 @@ All API models are strongly typed with TypeScript interfaces:
 
 ## 🛠️ Development
 
-### Adding New Tests
-1. Create test file in `src/tests/`
-2. Import fixtures: `import { test, expect } from '../fixtures/test-context'`
-3. Use API clients injected via fixtures
-4. Add appropriate tags to test descriptions
-5. Use Allure annotations for reporting
+### Adding New Test Scenarios
+1. Add Gherkin scenarios to feature files in `src/features/`
+2. Run tests to generate undefined step snippets
+3. Implement step definitions in `src/step-definitions/`
+4. Use the CustomWorld context to share data between steps
+5. Add appropriate tags for test organization
 
-### Example Test Structure
+### Example Feature Scenario
+```gherkin
+@smoke @pet @create
+Scenario: Create a new pet
+  Given I have a pet with name "Buddy" and status "available"
+  When I create the pet
+  Then the response status code should be 200
+  And the response should contain pet name "Buddy"
+```
+
+### Example Step Definition
 ```typescript
-import { test, expect } from '../fixtures/test-context';
-import { allure } from 'allure-playwright';
+import { Given, When, Then } from '@cucumber/cucumber';
+import { expect } from '@playwright/test';
+import { CustomWorld } from '../support/world';
 
-test.describe('Feature Name @tag', () => {
-  test('Test scenario @smoke @create', async ({ petClient }) => {
-    await allure.epic('Epic Name');
-    await allure.feature('Feature Name');
-    await allure.story('User Story');
+Given('I have a pet with name {string} and status {string}', 
+  async function (this: CustomWorld, name: string, status: string) {
+    this.currentPet = {
+      name: name,
+      status: status as 'available' | 'pending' | 'sold',
+      photoUrls: ['string']
+    };
+});
 
-    // Arrange
-    const data = { /* test data */ };
+When('I create the pet', async function (this: CustomWorld) {
+  this.response = await this.petService.createPet(this.currentPet!);
+  this.responseBody = await this.response.json();
+});
 
-    // Act
-    const response = await petClient.createPet(data);
-
-    // Assert
-    expect(response.status()).toBe(200);
-  });
+Then('the response status code should be {int}', 
+  async function (this: CustomWorld, statusCode: number) {
+    expect(this.response!.status()).toBe(statusCode);
 });
 ```
 
@@ -336,12 +388,25 @@ npm install -D allure-commandline
 ### Issue: TypeScript compilation errors
 **Solution:** Clean and reinstall dependencies:
 ```bash
-rm -rf node_modules package-lock.json
+npm run clean
 npm install
 ```
 
-### Issue: Tests run sequentially instead of parallel
-**Solution:** Check `workers` setting in `playwright.config.ts`
+### Issue: Step definitions not found
+**Solution:** Ensure ts-node is properly configured and step files are in correct location:
+```bash
+# Check cucumber configuration
+cat cucumber.js
+
+# Verify step definition files exist
+ls -la src/step-definitions/
+```
+
+### Issue: "Cannot find module" errors
+**Solution:** Check TypeScript configuration and rebuild:
+```bash
+npx tsc --noEmit  # Check for TypeScript errors
+```
 
 ## 📚 API Documentation
 
