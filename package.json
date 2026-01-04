@@ -1,0 +1,36 @@
+{
+  "name": "petstore-playwright",
+  "version": "1.0.0",
+  "description": "Playwright + TypeScript API test automation framework for Petstore API with Allure reporting",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:pet": "playwright test pet.spec.ts",
+    "test:store": "playwright test store.spec.ts",
+    "test:user": "playwright test user.spec.ts",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:regression": "playwright test --grep @regression",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "allure:generate": "allure generate ./allure-results --clean -o ./allure-report",
+    "allure:open": "allure open ./allure-report",
+    "allure:serve": "allure serve ./allure-results"
+  },
+  "keywords": [
+    "playwright",
+    "typescript",
+    "api-testing",
+    "allure",
+    "petstore",
+    "test-automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^22.10.2",
+    "allure-commandline": "^2.32.1",
+    "allure-playwright": "^3.0.3",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,322 +1,372 @@
-# API Test Automation Framework
+# Petstore API Test Automation Framework
 
-A robust, enterprise-grade API test automation framework built with Rest Assured, Spring Boot, Java, TestNG, Cucumber, and Allure reporting, featuring secure secret management via Azure Key Vault and MySQL database validation.
+A modern, enterprise-grade API test automation framework built with **Playwright**, **TypeScript**, and **Allure reporting**. This framework provides comprehensive API testing for the Petstore API with support for smoke and regression test suites.
 
-## 🏗️ Architecture Overview
+## 🏗️ Project Structure
 
 ```
-├── src/test/java/com/automation/api/
-│   ├── config/              # Spring configuration & Key Vault integration
-│   ├── runners/             # TestNG + Cucumber runners
-│   ├── steps/               # Cucumber step definitions
-│   ├── spec/                # Rest Assured specifications & request builders
-│   ├── utils/               # Utilities (Key Vault, DB, helpers)
-│   ├── listeners/           # Allure & TestNG listeners
-│   └── models/              # POJOs & DTOs
-├── src/test/resources/
-│   ├── features/            # Cucumber feature files
-│   ├── application-test.yml # Test configuration
-│   └── testdata/            # Test data JSON files
-├── build.gradle             # Dependencies & build configuration
-└── .github/workflows/       # CI/CD pipelines
+petstore-playwright/
+├── src/
+│   ├── api/
+│   │   ├── clients/           # API client classes
+│   │   │   ├── PetClient.ts
+│   │   │   ├── StoreClient.ts
+│   │   │   └── UserClient.ts
+│   │   ├── models/            # TypeScript interfaces/types
+│   │   │   ├── Pet.ts
+│   │   │   ├── Order.ts
+│   │   │   ├── User.ts
+│   │   │   ├── Category.ts
+│   │   │   └── Tag.ts
+│   │   └── config/
+│   │       └── ApiConfig.ts   # API configuration
+│   ├── tests/                 # Test specifications
+│   │   ├── pet.spec.ts
+│   │   ├── store.spec.ts
+│   │   └── user.spec.ts
+│   ├── fixtures/
+│   │   └── test-context.ts    # Playwright fixtures
+│   └── utils/
+│       └── helpers.ts         # Helper functions
+├── playwright.config.ts       # Playwright configuration
+├── package.json              # Dependencies & scripts
+├── tsconfig.json             # TypeScript configuration
+├── .gitignore
+├── .env.example
+└── README.md
 ```
-
 
 ## 🚀 Key Features
 
-- ✅ **BDD with Cucumber** - Readable, maintainable test scenarios
-- ✅ **Rest Assured** - Fluent API testing with built-in validations
-- ✅ **Spring Boot DI** - Clean dependency injection and configuration
-- ✅ **TestNG Parallel Execution** - Fast test execution with thread safety
-- ✅ **Azure Key Vault Integration** - Secure secret management (zero secrets in code)
-- ✅ **MySQL Validation** - Database state assertions and cleanup
+- ✅ **Playwright + TypeScript** - Modern, type-safe API testing
 - ✅ **Allure Reporting** - Rich test reports with request/response attachments
-- ✅ **CI/CD Ready** - GitHub Actions workflow included
-- ✅ **Environment Agnostic** - Works locally and in CI with managed identities
+- ✅ **Modular Architecture** - Clean separation of concerns with clients and models
+- ✅ **Test Fixtures** - Reusable Playwright fixtures for API clients
+- ✅ **Tag-based Execution** - Run tests by tags (@smoke, @regression, @pet, @user, @store)
+- ✅ **Parallel Execution** - Fast test execution with configurable workers
+- ✅ **CI/CD Ready** - Easy integration with GitHub Actions and other CI systems
+- ✅ **Comprehensive Coverage** - All CRUD operations for Pet, Store, and User APIs
 
 ## 📋 Prerequisites
 
-- Java 17+
-- Gradle 7.5+ (or use included wrapper)
-- MySQL 8.0+
-- Azure Key Vault (for secret management)
-- Docker (optional, for local MySQL)
+- **Node.js** 18+ (LTS recommended)
+- **npm** 9+ or **yarn** 1.22+
 
-## 🔧 Setup Instructions
+## 🔧 Installation
 
-### 1. Local Development Setup
-
-#### Clone and Build
+### 1. Clone the repository
 ```bash
-git clone https://github.com/rangegowdaym/api-test-automation.git
-cd api-test-automation
-./gradlew clean build -x test
+git clone https://github.com/rangegowdaym/petstore-playwright.git
+cd petstore-playwright
 ```
 
-#### Set Up Local MySQL
+### 2. Install dependencies
 ```bash
-docker run --name mysql-test \
-  -e MYSQL_ROOT_PASSWORD=rootpassword \
-  -e MYSQL_DATABASE=testdb \
-  -p 3306:3306 \
-  -d mysql:8.0
+npm install
 ```
 
-#### Environment Variables (Local Development Fallback)
-If Azure Key Vault is not available, set these environment variables:
-
+### 3. Install Playwright browsers (optional for API-only tests)
 ```bash
-export API_BASE_URL=https://jsonplaceholder.typicode.com
-export API_KEY=your-local-api-key
-export DB_URL=jdbc:mysql://localhost:3306/testdb
-export DB_USERNAME=root
-export DB_PASSWORD=rootpassword
+npx playwright install
 ```
 
-### 2. Azure Key Vault Setup
-
-#### Create Key Vault & Secrets
+### 4. Configure environment (optional)
 ```bash
-# Create resource group
-az group create --name rg-test-automation --location eastus
-
-# Create Key Vault
-az keyvault create \
-  --name kv-api-automation \
-  --resource-group rg-test-automation \
-  --location eastus
-
-# Add secrets
-az keyvault secret set --vault-name kv-api-automation --name api-base-url --value "https://api.example.com"
-az keyvault secret set --vault-name kv-api-automation --name api-key --value "your-api-key"
-az keyvault secret set --vault-name kv-api-automation --name db-url --value "jdbc:mysql://prod-db:3306/appdb"
-az keyvault secret set --vault-name kv-api-automation --name db-username --value "dbuser"
-az keyvault secret set --vault-name kv-api-automation --name db-password --value "dbpassword"
+cp .env.example .env
+# Edit .env with your settings if needed
 ```
 
-#### Grant Access (Local Development)
+## 🧪 Running Tests
+
+### Run all tests
 ```bash
-# Login to Azure
-az login
-
-# Grant yourself access
-az keyvault set-policy \
-  --name kv-api-automation \
-  --upn your-email@company.com \
-  --secret-permissions get list
+npm test
 ```
 
-#### Configure Application
-Update `src/test/resources/application-test.yml`:
-
-```yaml
-azure:
-  keyvault:
-    enabled: true
-    vault-uri: https://kv-api-automation.vault.azure.net/
-```
-
-### 3. Running Tests
-
-#### Run All Tests
+### Run specific test suites
 ```bash
-./gradlew test
+# Pet API tests
+npm run test:pet
+
+# Store API tests
+npm run test:store
+
+# User API tests
+npm run test:user
 ```
 
-#### Run Specific Tags
+### Run by tags
 ```bash
-./gradlew test -Dcucumber.filter.tags="@smoke"
-./gradlew test -Dcucumber.filter.tags="@regression and not @skip"
+# Smoke tests only
+npm run test:smoke
+
+# Regression tests only
+npm run test:regression
 ```
 
-#### Run with Specific Environment
+### Run with UI (headed mode)
 ```bash
-./gradlew test -Dspring.profiles.active=qa
+npm run test:headed
 ```
 
-#### Parallel Execution
-Configure in `src/test/resources/testng.xml`:
-```xml
-<suite name="API Test Suite" parallel="methods" thread-count="5">
-```
-
-### 4. View Allure Reports
-
-#### Generate Report
+### Debug tests
 ```bash
-./gradlew allureReport
-./gradlew allureServe
-```
-
-This will open the report in your default browser.
-
-## 🔐 Secret Management
-
-### Priority Order
-1. **Azure Key Vault** (if enabled and accessible)
-2. **Environment Variables** (fallback for local development)
-3. **application-test.yml** (non-sensitive defaults only)
-
-### Azure Authentication Methods
-The framework uses `DefaultAzureCredential` which tries in order:
-1. Environment variables (AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET)
-2. Managed Identity (in Azure environments)
-3. Azure CLI (for local development after `az login`)
-4. IntelliJ/VS Code Azure plugins
-
-### Best Practices
-- ⚠️ Never commit secrets to version control
-- ✅ Use Azure Key Vault in CI/CD
-- ✅ Use Managed Identity for Azure-hosted runners
-- ✅ Use environment variables only for local development
-
-## 🧪 Writing Tests
-
-### Example Feature File
-```gherkin
-@regression @api
-Feature: User Management API
-
-  Background:
-    Given the API is available
-
-  @smoke @database
-  Scenario: Create new user and validate in database
-    Given I have a new user payload with email "test@example.com"
-    When I send a POST request to "/users"
-    Then the response status code should be 201
-    And the response should contain field "id"
-    And the user should exist in the database with email "test@example.com"
-    And I clean up the test user from database
-```
-
-### Example Step Definition
-```java
-@When("I send a POST request to {string}")
-public void sendPostRequest(String endpoint) {
-    response = requestSpec
-        .body(requestPayload)
-        .post(endpoint);
-    
-    AllureRestAssured.attachRequestResponse(response);
-}
-```
-
-## 🔄 CI/CD Integration
-
-### GitHub Actions
-The workflow in `.github/workflows/ci.yml`:
-- Runs on push/PR to main
-- Sets up Java 17
-- Configures MySQL service
-- Authenticates to Azure using OIDC
-- Runs tests in parallel
-- Publishes Allure report as artifact
-- Optionally deploys to Allure server
-
-### Required GitHub Secrets
-```
-AZURE_CLIENT_ID
-AZURE_TENANT_ID
-AZURE_SUBSCRIPTION_ID
-KEY_VAULT_NAME
-```
-
-### Federated Identity Setup
-```bash
-az ad app federated-credential create \
-  --id $APP_ID \
-  --parameters credential.json
+npm run test:debug
 ```
 
 ## 📊 Test Reporting
 
-### Allure Features
-- Request/Response bodies attached automatically
-- SQL queries and results attached
-- Step-by-step execution details
-- Categorization by feature/suite
-- Trend analysis across builds
-- Environment information
+### Generate and view Allure reports
 
-### Custom Attachments
-```java
-@Step("Validate user in database")
-public void validateUser(String email) {
-    String query = "SELECT * FROM users WHERE email = ?";
-    Allure.addAttachment("SQL Query", query);
-    // ... execute and attach results
-}
+#### Option 1: Generate and open static report
+```bash
+# Generate report
+npm run allure:generate
+
+# Open report in browser
+npm run allure:open
 ```
 
-## 🏗️ Database Management
-
-### Test Data Strategy
-- Use unique identifiers (UUID, timestamps)
-- Clean up test data in `@After` hooks
-- Support transaction rollback where possible
-- Separate test database from production
-
-### Example Cleanup
-```java
-@After("@database")
-public void cleanupTestData() {
-    databaseUtils.deleteTestUsers();
-    databaseUtils.resetSequences();
-}
+#### Option 2: Serve report with live reload
+```bash
+npm run allure:serve
 ```
+
+Allure reports include:
+- ✅ Test execution summary with pass/fail statistics
+- ✅ Test suites organized by features (Pet, Store, User)
+- ✅ Full request/response details for each API call
+- ✅ Execution timeline and history trends
+- ✅ Categorized failures for easy debugging
+
+## 📝 Test Scenarios
+
+### Pet API Tests (`@pet`)
+- ✅ Create a new pet (`@smoke @create`)
+- ✅ Get pet by ID (`@regression @read`)
+- ✅ Update pet status (`@regression @update`)
+- ✅ Search pets by status - available, pending, sold (`@regression @search`)
+- ✅ Delete a pet (`@smoke @delete`)
+
+### Store API Tests (`@store`)
+- ✅ Place a new order (`@smoke @order`)
+- ✅ Get order by ID (`@regression @read`)
+- ✅ Delete an order (`@regression @delete`)
+- ✅ Get store inventory (`@smoke @inventory`)
+
+### User API Tests (`@user`)
+- ✅ Create a new user (`@smoke @create`)
+- ✅ Get user by username (`@regression @read`)
+- ✅ Update user information (`@regression @update`)
+- ✅ Delete a user (`@smoke @delete`)
+- ✅ User login (`@regression @login`)
+- ✅ User logout (`@regression @logout`)
+
+## 🏷️ Tagging Strategy
+
+Tests use Playwright's grep functionality for tag-based execution:
+
+- `@smoke` - Critical path tests (run on every commit)
+- `@regression` - Full regression suite (run before releases)
+- `@pet` - Pet API tests
+- `@store` - Store API tests
+- `@user` - User API tests
+- `@create` - Create operations
+- `@read` - Read/Get operations
+- `@update` - Update operations
+- `@delete` - Delete operations
 
 ## ⚙️ Configuration
 
-### Environment-Specific Config
-Create multiple profile files:
-- `application-test.yml` (default)
-- `application-qa.yml`
-- `application-staging.yml`
-
-### Overriding Properties
+### Environment Variables (.env)
 ```bash
-./gradlew test \
-  -Dspring.profiles.active=qa \
-  -Dapi.timeout=5000 \
-  -Ddb.pool.size=10
+# API Configuration
+API_BASE_URL=https://petstore.swagger.io/v2
+API_TIMEOUT=30000
+
+# Test Configuration
+TEST_TIMEOUT=60000
+RETRY_COUNT=1
+WORKERS=4
+
+# Allure Configuration
+ALLURE_RESULTS_DIR=./allure-results
+ALLURE_REPORT_DIR=./allure-report
+```
+
+### Playwright Configuration (playwright.config.ts)
+Key settings:
+- Base URL: `https://petstore.swagger.io/v2`
+- Timeout: 60 seconds per test
+- Retries: 1 (configurable)
+- Workers: 4 (parallel execution)
+- Reporters: HTML, Allure
+
+## 🔄 CI/CD Integration
+
+### GitHub Actions Example
+```yaml
+name: API Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run smoke tests
+        run: npm run test:smoke
+        
+      - name: Run regression tests
+        run: npm run test:regression
+        
+      - name: Generate Allure report
+        if: always()
+        run: npm run allure:generate
+        
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: allure-results
+          path: allure-results
+          
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: allure-report
+          path: allure-report
+```
+
+## 🏗️ API Architecture
+
+### API Clients
+Each API domain has a dedicated client class:
+
+**PetClient** - Manages pet-related operations
+- `createPet(pet: Pet)`
+- `updatePet(pet: Pet)`
+- `getPetById(petId: number)`
+- `getPetsByStatus(status: string)`
+- `deletePet(petId: number)`
+
+**StoreClient** - Manages store/order operations
+- `getInventory()`
+- `placeOrder(order: Order)`
+- `getOrderById(orderId: number)`
+- `deleteOrder(orderId: number)`
+
+**UserClient** - Manages user operations
+- `createUser(user: User)`
+- `getUserByUsername(username: string)`
+- `updateUser(username: string, user: User)`
+- `deleteUser(username: string)`
+- `loginUser(username: string, password: string)`
+- `logoutUser()`
+
+### Type Safety
+All API models are strongly typed with TypeScript interfaces:
+- `Pet` - Pet entity with category, tags, status
+- `Order` - Store order with pet reference
+- `User` - User entity with profile information
+- `Category` - Pet category
+- `Tag` - Pet tag
+
+## 🛠️ Development
+
+### Adding New Tests
+1. Create test file in `src/tests/`
+2. Import fixtures: `import { test, expect } from '../fixtures/test-context'`
+3. Use API clients injected via fixtures
+4. Add appropriate tags to test descriptions
+5. Use Allure annotations for reporting
+
+### Example Test Structure
+```typescript
+import { test, expect } from '../fixtures/test-context';
+import { allure } from 'allure-playwright';
+
+test.describe('Feature Name @tag', () => {
+  test('Test scenario @smoke @create', async ({ petClient }) => {
+    await allure.epic('Epic Name');
+    await allure.feature('Feature Name');
+    await allure.story('User Story');
+
+    // Arrange
+    const data = { /* test data */ };
+
+    // Act
+    const response = await petClient.createPet(data);
+
+    // Assert
+    expect(response.status()).toBe(200);
+  });
+});
 ```
 
 ## 🐛 Troubleshooting
 
-### Key Vault Access Issues
+### Issue: Tests fail with connection timeout
+**Solution:** Check if the Petstore API is accessible:
+```bash
+curl https://petstore.swagger.io/v2/pet/findByStatus?status=available
 ```
-Error: PERMISSION_DENIED when accessing Key Vault
-```
-**Solution:** Ensure you've run `az login` and have proper access policy
 
-### MySQL Connection Issues
+### Issue: Allure report not generating
+**Solution:** Ensure allure-commandline is installed:
+```bash
+npm install -D allure-commandline
 ```
-Error: Communications link failure
-```
-**Solution:** Check MySQL is running and port 3306 is accessible
 
-### Parallel Execution Failures
+### Issue: TypeScript compilation errors
+**Solution:** Clean and reinstall dependencies:
+```bash
+rm -rf node_modules package-lock.json
+npm install
 ```
-Error: Thread safety issues
-```
-**Solution:** Ensure ThreadLocal usage for RestAssured specs and DB connections
 
-## 📚 Additional Resources
+### Issue: Tests run sequentially instead of parallel
+**Solution:** Check `workers` setting in `playwright.config.ts`
 
-- [Rest Assured Documentation](https://rest-assured.io/)
-- [Cucumber Best Practices](https://cucumber.io/docs/guides/10-minute-tutorial/)
-- [Allure Framework](https://docs.qameta.io/allure/)
-- [Azure Key Vault Java SDK](https://docs.microsoft.com/en-us/java/api/overview/azure/security-keyvault-secrets-readme)
+## 📚 API Documentation
+
+**Petstore API Swagger**: https://petstore.swagger.io
+
+**API Endpoints:**
+- Pet: `POST /pet`, `PUT /pet`, `GET /pet/{petId}`, `GET /pet/findByStatus`, `DELETE /pet/{petId}`
+- Store: `GET /store/inventory`, `POST /store/order`, `GET /store/order/{orderId}`, `DELETE /store/order/{orderId}`
+- User: `POST /user`, `GET /user/{username}`, `PUT /user/{username}`, `DELETE /user/{username}`, `GET /user/login`, `GET /user/logout`
 
 ## 🤝 Contributing
 
-1. Create feature branch from `main`
-2. Write tests for new functionality
-3. Ensure all tests pass: `./gradlew test`
-4. Submit PR with Allure report attached
+1. Create a feature branch from `main`
+2. Write tests following the existing patterns
+3. Ensure all tests pass: `npm test`
+4. Update documentation if needed
+5. Submit a pull request
 
 ## 📝 License
 
 MIT License - see LICENSE file for details
-```
+
+## 🔗 Links
+
+- **Playwright Documentation**: https://playwright.dev
+- **Allure Framework**: https://docs.qameta.io/allure/
+- **TypeScript**: https://www.typescriptlang.org/
+- **Petstore API**: https://petstore.swagger.io
